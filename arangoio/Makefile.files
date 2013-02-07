@@ -1,0 +1,33 @@
+# -*- mode: Makefile; -*-
+
+################################################################################
+## --SECTION--                                                           PROGRAM
+################################################################################
+
+################################################################################
+### @brief program "arangodump"
+################################################################################
+
+bin_arangodump_CPPFLAGS = \
+	-I@top_srcdir@/arangosh \
+	$(AM_CPPFLAGS) 
+
+bin_arangodump_LDADD = \
+	lib/libarango_v8.a \
+	lib/libarango_client.a \
+	lib/libarango.a \
+	$(LIBS) \
+	@V8_LIBS@
+
+bin_arangodump_SOURCES = \
+	arangoio/Dump/arangodump.cpp \
+	arangoio/Dump/DumpClient.cpp
+
+################################################################################
+## --SECTION--                                                       END-OF-FILE
+################################################################################
+
+## Local Variables:
+## mode: outline-minor
+## outline-regexp: "^\\(### @brief\\|## --SECTION--\\|# -\\*- \\)"
+## End:
