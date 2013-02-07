@@ -165,7 +165,8 @@ noinst_LIBRARIES = \
 
 bin_PROGRAMS = \
 	bin/arangosh \
-	bin/arangoimp
+	bin/arangoimp \
+	bin/arangodump
 
 if ENABLE_ARANGOB	
 bin_PROGRAMS += bin/arangob
@@ -268,6 +269,7 @@ build_posix.h: configure.ac
 
 include lib/Makefile.files
 include arangod/Makefile.files
+include arangoio/Makefile.files
 include arangosh/Makefile.files
 include etc/Makefile.files
 include utils/Makefile.files

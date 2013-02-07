@@ -46,20 +46,20 @@
 using namespace triagens::arangoio::dump;
 
 typedef struct ProgramOptions {
-	double       connectionTimeout;
-	bool         disableAuthentication;
+	double        connectionTimeout;
+	bool          disableAuthentication;
 	std::string   endpoint;
-	bool         isWriteData;
-	bool         isWriteMetaData;
+	bool          isWriteData;
+	bool          isWriteMetaData;
 	std::string   pathToSave;
 	std::string   password;
-	double       requestTimeout;
+	double        requestTimeout;
 	std::string   username;
 }
 ProgramOptions;
 
 // Parse input program options
-void parseOptions(int argc, char* argv[], ProgramOptions * params) {
+void parseOptions(int argc, char* argv[], ProgramOptions * params) throw (std::runtime_error) {
 
 	triagens::basics::ProgramOptions options;
 	triagens::basics::ProgramOptionsDescription description("STANDARD options");

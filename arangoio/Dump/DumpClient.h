@@ -47,13 +47,15 @@ public:
 	/**
 	 * Destructor
 	 */
-	virtual ~DumpClient();
+	virtual     ~DumpClient();
 
-	std::string getPath() throw(std::runtime_error);
-	void        setPath(std::string path) throw(std::runtime_error);
+	std::string  getPath() throw (std::runtime_error);
+	void         setPath(std::string path) throw (std::runtime_error);
 
-	void        write(const std::string & url, const std::string & fileName) throw(std::runtime_error);
-	void        write(const std::string & url, const std::string & fileName, bool isMetaData) throw(std::runtime_error);
+	void        write(const std::string & url, const std::string & fileName)
+						throw (std::runtime_error);
+	void        write(const std::string & url, const std::string & fileName, bool isMetaData)
+						throw (std::runtime_error);
 
 protected:
 

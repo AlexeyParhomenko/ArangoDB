@@ -55,7 +55,7 @@ DumpClient::~DumpClient() {
 
 }
 
-std::string DumpClient::getPath() throw(std::runtime_error) {
+std::string DumpClient::getPath() throw (std::runtime_error) {
 
 	if (path_.empty()) {
 		throw std::runtime_error("Directory to save can't be empty.");
@@ -65,7 +65,7 @@ std::string DumpClient::getPath() throw(std::runtime_error) {
 
 }
 
-void DumpClient::setPath(std::string path) throw(std::runtime_error) {
+void DumpClient::setPath(std::string path) throw (std::runtime_error) {
 
 	if (!triagens::basics::FileUtils::exists(path)
 		|| !triagens::basics::FileUtils::isDirectory(path)) {
