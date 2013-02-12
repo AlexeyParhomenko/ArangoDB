@@ -29,6 +29,7 @@
 #define DUMPCLIENT_H_
 
 #include <stdexcept>
+#include <map>
 #include "SimpleHttpClient/SimpleHttpClient.h"
 #include "SimpleHttpClient/SimpleHttpResult.h"
 
@@ -49,9 +50,28 @@ public:
 	 */
 	virtual     ~DumpClient();
 
-	std::string  getPath() throw (std::runtime_error);
-	void         setPath(std::string path) throw (std::runtime_error);
+	/**
+	 * Return names collections
+	 */
+	std::vector<std::string>  getCollections() throw (std::runtime_error);
 
+	/**
+	 * Return path to save
+	 */
+	std::string               getPath() throw (std::runtime_error);
+
+	bool                      isRewriteExistsPath();
+
+	/**
+	 * Set path to save
+	 */
+	void                      setPath(std::string path) throw (std::runtime_error);
+
+	void                      setRewriteExistsPath(bool isRewrite);
+
+	/**
+	 * Write dump
+	 */
 	void        write(const std::string & url, const std::string & fileName)
 						throw (std::runtime_error);
 	void        write(const std::string & url, const std::string & fileName, bool isMetaData)
@@ -61,7 +81,10 @@ protected:
 
 	triagens::httpclient::SimpleHttpClient * httpClient_;
 	triagens::httpclient::SimpleHttpResult * httpResult_;
+	bool        rewriteExistsPath_;
 	std::string path_;
+
+	void sendRequest(const std::string & url) throw(std::runtime_error);
 
 };
 

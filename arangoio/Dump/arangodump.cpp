@@ -27,6 +27,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <vector>
 
 #include "build.h"
 
@@ -49,6 +50,7 @@ typedef struct ProgramOptions {
 	double        connectionTimeout;
 	bool          disableAuthentication;
 	std::string   endpoint;
+	bool          isRewriteExistsPath;
 	bool          isWriteData;
 	bool          isWriteMetaData;
 	std::string   pathToSave;
@@ -57,6 +59,22 @@ typedef struct ProgramOptions {
 	std::string   username;
 }
 ProgramOptions;
+
+std::string displayUsage(char* argv[]) {
+
+	std::stringstream error;
+	error
+		<< "Usage: "
+		<< argv[0]
+		<< " [OPTIONS] collection"
+		<< std::endl
+		<< "For more options, use "
+		<< argv[0]
+		<< " --help";
+
+	return error.str();
+
+}
 
 // Parse input program options
 void parseOptions(int argc, char* argv[], ProgramOptions * params) throw (std::runtime_error) {
@@ -67,6 +85,7 @@ void parseOptions(int argc, char* argv[], ProgramOptions * params) throw (std::r
 		("data", &params->isWriteData, "Export database data.")
 		("create-collection", &params->isWriteMetaData, "Export database meta-data.")
 		("path", &params->pathToSave, "Path to save data or meta-data.")
+		("force", &params->isRewriteExistsPath, "Set permission to rewrite data in current path.")
 		("help", "Display this help message and exit.");
 
 	triagens::basics::ProgramOptionsDescription clientOptions("CLIENT options");
@@ -91,6 +110,14 @@ void parseOptions(int argc, char* argv[], ProgramOptions * params) throw (std::r
 	if (!help.empty()) {
 		throw std::runtime_error(description.usage(help));
 	}
+
+	if (1 == argc) {
+		throw std::runtime_error(displayUsage(argv));
+	}
+
+	if (!params->isWriteData && !params->isWriteMetaData) {
+		throw std::runtime_error("You choose do nothing for dump.");
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,7 +129,7 @@ int main(int argc, char* argv[]) {
 	TRIAGENS_C_INITIALISE(argc, argv);
 //	TRIAGENS_REST_INITIALISE(argc, argv);
 
-//	TRI_InitialiseLogging(false);
+	TRI_InitialiseLogging(false);
 
 	int err = 0;
 
@@ -111,10 +138,13 @@ int main(int argc, char* argv[]) {
 	params.connectionTimeout      = 3.0;
 	params.disableAuthentication  = false;
 	params.endpoint               = triagens::rest::Endpoint::getDefaultEndpoint();
+	params.isRewriteExistsPath    = false;
 	params.isWriteData            = true;
 	params.isWriteMetaData        = true;
-	params.pathToSave             = triagens::basics::FileUtils::currentDirectory(&err);
 	params.requestTimeout         = 300.0;
+	params.pathToSave
+		.append(triagens::basics::FileUtils::currentDirectory(&err))
+		.append("/dump");
 
 	// Initialize pointers
 	triagens::rest::Endpoint * endpoint                         = NULL;
@@ -144,11 +174,15 @@ int main(int argc, char* argv[]) {
 		httpClient->setUserNamePassword("/", params.username, params.password);
 
 		dumpClient = new DumpClient(httpClient);
+		dumpClient->setRewriteExistsPath(params.isRewriteExistsPath);
 		dumpClient->setPath(params.pathToSave);
 
-		std::string url;
+		std::vector<std::string> collectionsOnServer, collectionsToDump;
+		std::vector<std::string>::iterator it;
 
-		// Start to save data
+		collectionsOnServer = dumpClient->getCollections();
+
+		// Check collections from user
 		for (int i = argc - 1; i > 0 ; i--) {
 
 			collection = argv[i];
@@ -157,13 +191,39 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 
-			if (i - 1 < 1 || std::string(argv[i - 1]).substr(0, 1) == "-") {
+			if ((argc != 2 && i - 1 < 1)
+					|| std::string(argv[i - 1]).substr(0, 1) == "-") {
 				break;
 			}
 
+			it = std::find(collectionsOnServer.begin(), collectionsOnServer.end(), collection);
+
+			if (it == collectionsOnServer.end()) {
+				throw std::runtime_error("Collection " + collection + " not found on server.");
+			}
+
+			collectionsToDump.push_back(collection);
+
+		}
+
+		if (collectionsToDump.size() == 0) {
+			throw std::runtime_error(displayUsage(argv));
+		}
+
+		std::string url;
+
+		// Start to save data
+		for (it = collectionsToDump.begin(); it != collectionsToDump.end(); it++) {
+
+			collection = (*it);
+
 			try {
 
+				std::cout << "Dumping collection: " << collection << std::endl;
+
 				if (params.isWriteData) {
+
+					std::cout << "   data...";
 
 					url.clear();
 					url
@@ -172,9 +232,13 @@ int main(int argc, char* argv[]) {
 
 					dumpClient->write(url, collection);
 
+					std::cout << " -> successful!" << std::endl;
+
 				}
 
 				if (params.isWriteMetaData) {
+
+					std::cout << "   metadata...";
 
 					url.clear();
 					url
@@ -183,6 +247,8 @@ int main(int argc, char* argv[]) {
 						.append("/properties");
 
 					dumpClient->write(url, collection, true);
+
+					std::cout << " -> successful!" << std::endl;
 
 				}
 
@@ -221,8 +287,8 @@ int main(int argc, char* argv[]) {
 	}
 
 //	TRIAGENS_REST_SHUTDOWN;
-
 	TRIAGENS_C_SHUTDOWN;
+
 	return EXIT_SUCCESS;
 
 }
