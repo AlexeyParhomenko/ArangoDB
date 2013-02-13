@@ -128,7 +128,7 @@ void DumpClient::setPath(std::string path) throw (std::runtime_error) {
     int err = 0;
 
     if (!triagens::basics::FileUtils::createDirectory(path, 0700, &err)) {
-      throw std::runtime_error("Can't create directory " + path);
+      throw std::runtime_error("Can't create directory '" + path + "'");
     }
 
   }
@@ -136,14 +136,14 @@ void DumpClient::setPath(std::string path) throw (std::runtime_error) {
 
     if (!isRewriteExistsPath()) {
       throw std::runtime_error(
-          "Directory " + path
-              + " is exists. Please choose another path to save dump.");
+          "Output directory '" + path
+              + "' already exists. Please choose another directory to save the dump.");
     }
 
   }
 
   if (!triagens::basics::FileUtils::isDirectory(path)) {
-    throw std::runtime_error("Path " + path + " isn't directory.");
+    throw std::runtime_error("Output path '" + path + "' is not a directory.");
   }
 
   path_ = path;
@@ -223,7 +223,7 @@ void DumpClient::write(const std::string & url, const std::string & fileName,
   std::ofstream stream(file.c_str());
 
   if (!stream.is_open()) {
-    throw std::runtime_error("Can't write to file " + file);
+    throw std::runtime_error("Can't write to file '" + file + "'");
   }
 
   if (!httpResult_->getBody().str().empty()) {
