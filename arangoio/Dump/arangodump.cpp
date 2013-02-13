@@ -279,12 +279,12 @@ int main(int argc, char* argv[]) {
         }
 
       } catch (std::runtime_error & e) {
-        std::cout << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
       }
     }
 
   } catch (std::exception & e) {
-    std::cout << std::endl << e.what() << std::endl << std::endl;
+    std::cerr << std::endl << e.what() << std::endl << std::endl;
   }
 
   // Delete pointers
