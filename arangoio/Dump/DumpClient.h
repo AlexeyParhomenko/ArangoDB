@@ -25,8 +25,8 @@
 /// @author Copyright 2013, triAGENS GmbH, Cologne, Germany
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef DUMPCLIENT_H_
-#define DUMPCLIENT_H_
+#ifndef TRIAGENS_ARANGOIO_DUMP_DUMPCLIENT_H
+#define TRIAGENS_ARANGOIO_DUMP_DUMPCLIENT_H 1
 
 #include <stdexcept>
 #include <map>
@@ -58,13 +58,13 @@ namespace triagens {
 /// @brief create the dump client
 ////////////////////////////////////////////////////////////////////////////////
 
-          DumpClient(triagens::httpclient::SimpleHttpClient * httpClient);
+          DumpClient (triagens::httpclient::SimpleHttpClient * httpClient);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief destroy the dump client
 ////////////////////////////////////////////////////////////////////////////////
 
-          virtual ~DumpClient();
+          virtual ~DumpClient ();
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @}
@@ -85,19 +85,19 @@ namespace triagens {
 /// @brief fetch the names of all collections from server and return them
 ////////////////////////////////////////////////////////////////////////////////
           
-          std::vector<std::string> getCollections() throw (std::runtime_error);
+          std::vector<std::string> getCollections () throw (std::runtime_error);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief get the output path
 ////////////////////////////////////////////////////////////////////////////////
 
-          std::string getPath() throw (std::runtime_error);
+          std::string getPath () throw (std::runtime_error);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief return whether it is allowed to overwrite files in the output path
 ////////////////////////////////////////////////////////////////////////////////
 
-          bool isRewriteExistsPath();
+          bool isRewriteExistsPath ();
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief set the output path
@@ -107,21 +107,21 @@ namespace triagens {
 /// disallow overwriting data, an exception will be thrown
 ////////////////////////////////////////////////////////////////////////////////
 
-          void setPath(std::string path) throw (std::runtime_error);
+          void setPath (std::string path) throw (std::runtime_error);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief sets the flag whether overwriting existing files in the output
 /// path is allowed
 ////////////////////////////////////////////////////////////////////////////////
 
-          void setRewriteExistsPath(bool isRewrite);
+          void setRewriteExistsPath (bool isRewrite);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief save data or metadata to file
 /// just dispatches work to other write() method
 ////////////////////////////////////////////////////////////////////////////////
 
-          void write(const std::string & url, const std::string & fileName)
+          void write (const std::string & url, const std::string & fileName)
             throw (std::runtime_error);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -131,7 +131,7 @@ namespace triagens {
 /// - save data into file
 ////////////////////////////////////////////////////////////////////////////////
 
-          void write(const std::string & url, const std::string & fileName,
+          void write (const std::string & url, const std::string & fileName,
               bool isMetaData) throw (std::runtime_error);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +153,7 @@ namespace triagens {
         
         protected:
 
-          void sendRequest(const std::string & url) throw (std::runtime_error);
+          void sendRequest (const std::string & url) throw (std::runtime_error);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @}
@@ -201,5 +201,14 @@ namespace triagens {
     } /* namespace dump */
   } /* namespace arangoio */
 } /* namespace triagens */
-#endif /* DUMPCLIENT_H_ */
 
+#endif /* TRIAGENS_ARANGOIO_DUMP_DUMPCLIENT_H */
+
+// -----------------------------------------------------------------------------
+// --SECTION--                                                       END-OF-FILE
+// -----------------------------------------------------------------------------
+
+// Local Variables:
+// mode: outline-minor
+// outline-regexp: "^\\(/// @brief\\|/// {@inheritDoc}\\|/// @addtogroup\\|// --SECTION--\\|/// @\\}\\)"
+// End:

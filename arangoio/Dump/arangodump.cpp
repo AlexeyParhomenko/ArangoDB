@@ -90,7 +90,7 @@ ProgramOptions;
 /// @brief assemble the program usage information
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string displayUsage(char* argv[]) {
+static std::string displayUsage (char* argv[]) {
 
   std::stringstream error;
   error << "Usage: " << argv[0] << " [OPTIONS] collection" << std::endl
@@ -103,7 +103,7 @@ std::string displayUsage(char* argv[]) {
 /// @brief parse program options
 ////////////////////////////////////////////////////////////////////////////////
 
-void parseOptions(int argc, char* argv[], ProgramOptions * params)
+static void parseOptions (int argc, char* argv[], ProgramOptions * params)
     throw (std::runtime_error) {
 
   triagens::basics::ProgramOptions options;
@@ -152,7 +152,7 @@ void parseOptions(int argc, char* argv[], ProgramOptions * params)
 /// @brief main
 ////////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char* argv[]) {
+int main (int argc, char* argv[]) {
 
   TRIAGENS_C_INITIALISE(argc, argv);
 //	TRIAGENS_REST_INITIALISE(argc, argv);

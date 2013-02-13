@@ -53,7 +53,7 @@ using namespace triagens::arangoio::dump;
 /// @brief create the dump client
 ////////////////////////////////////////////////////////////////////////////////
 
-DumpClient::DumpClient(triagens::httpclient::SimpleHttpClient * httpClient) :
+DumpClient::DumpClient (triagens::httpclient::SimpleHttpClient * httpClient) :
     httpClient_(httpClient), 
     httpResult_(0), 
     rewriteExistsPath_(false) {
@@ -64,7 +64,7 @@ DumpClient::DumpClient(triagens::httpclient::SimpleHttpClient * httpClient) :
 /// @brief destroy the dump client
 ////////////////////////////////////////////////////////////////////////////////
 
-DumpClient::~DumpClient() {
+DumpClient::~DumpClient () {
 
   if (0 != httpResult_) {
     delete httpResult_;
@@ -89,7 +89,7 @@ DumpClient::~DumpClient() {
 /// @brief fetch the names of all collections from server and return them
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<std::string> DumpClient::getCollections() throw (std::runtime_error) {
+std::vector<std::string> DumpClient::getCollections () throw (std::runtime_error) {
 
   std::vector<std::string> collections;
 
@@ -140,7 +140,7 @@ std::vector<std::string> DumpClient::getCollections() throw (std::runtime_error)
 /// @brief get the output path
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string DumpClient::getPath() throw (std::runtime_error) {
+std::string DumpClient::getPath () throw (std::runtime_error) {
 
   if (path_.empty()) {
     throw std::runtime_error("Output path must not be empty.");
@@ -154,7 +154,7 @@ std::string DumpClient::getPath() throw (std::runtime_error) {
 /// @brief return whether it is allowed to overwrite files in the output path
 ////////////////////////////////////////////////////////////////////////////////
 
-bool DumpClient::isRewriteExistsPath() {
+bool DumpClient::isRewriteExistsPath () {
   return rewriteExistsPath_;
 }
 
@@ -166,7 +166,7 @@ bool DumpClient::isRewriteExistsPath() {
 /// disallow overwriting data, an exception will be thrown
 ////////////////////////////////////////////////////////////////////////////////
 
-void DumpClient::setPath(std::string path) throw (std::runtime_error) {
+void DumpClient::setPath (std::string path) throw (std::runtime_error) {
 
   if (! triagens::basics::FileUtils::exists(path)) {
     // output path does not yet exist
@@ -211,7 +211,7 @@ void DumpClient::setPath(std::string path) throw (std::runtime_error) {
 /// path is allowed
 ////////////////////////////////////////////////////////////////////////////////
 
-void DumpClient::setRewriteExistsPath(bool isRewrite) {
+void DumpClient::setRewriteExistsPath (bool isRewrite) {
   rewriteExistsPath_ = isRewrite;
 }
 
@@ -220,7 +220,7 @@ void DumpClient::setRewriteExistsPath(bool isRewrite) {
 /// just dispatches work to other write() method
 ////////////////////////////////////////////////////////////////////////////////
 
-void DumpClient::write(const std::string & url, const std::string & fileName)
+void DumpClient::write (const std::string & url, const std::string & fileName)
     throw (std::runtime_error) {
   write(url, fileName, false);
 }
@@ -232,7 +232,7 @@ void DumpClient::write(const std::string & url, const std::string & fileName)
 /// - save data into file
 ////////////////////////////////////////////////////////////////////////////////
 
-void DumpClient::write(const std::string & url, const std::string & fileName,
+void DumpClient::write (const std::string & url, const std::string & fileName,
     bool isMetaData) throw (std::runtime_error) {
 
   sendRequest(url);
@@ -279,7 +279,7 @@ void DumpClient::write(const std::string & url, const std::string & fileName,
 /// @brief send request to server and get result
 ////////////////////////////////////////////////////////////////////////////////
 
-void DumpClient::sendRequest(const std::string & url) throw (std::runtime_error) {
+void DumpClient::sendRequest (const std::string & url) throw (std::runtime_error) {
 
   std::map<std::string, std::string> headerFields;
 
