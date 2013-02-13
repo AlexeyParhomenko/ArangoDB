@@ -46,14 +46,49 @@
 
 using namespace triagens::arangoio::dump;
 
+// -----------------------------------------------------------------------------
+// --SECTION--                                                     private types
+// -----------------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////////////
+/// @addtogroup ArangoDump
+/// @{
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/// @brief arangodump options
+////////////////////////////////////////////////////////////////////////////////
+
 typedef struct ProgramOptions {
-  double connectionTimeout;bool disableAuthentication;
-  std::string endpoint;bool isRewriteExistsPath;bool isWriteData;bool isWriteMetaData;
+  double connectionTimeout;
+  bool disableAuthentication;
+  std::string endpoint;
+  bool isRewriteExistsPath;
+  bool isWriteData;
+  bool isWriteMetaData;
   std::string pathToSave;
   std::string password;
   double requestTimeout;
   std::string username;
-} ProgramOptions;
+} 
+ProgramOptions;
+
+////////////////////////////////////////////////////////////////////////////////
+/// @}
+////////////////////////////////////////////////////////////////////////////////
+
+// -----------------------------------------------------------------------------
+// --SECTION--                                                 private functions
+// -----------------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////////////
+/// @addtogroup ArangoDump
+/// @{
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/// @brief assemble the program usage information
+////////////////////////////////////////////////////////////////////////////////
 
 std::string displayUsage(char* argv[]) {
 
@@ -62,10 +97,12 @@ std::string displayUsage(char* argv[]) {
       << "For more options, use " << argv[0] << " --help";
 
   return error.str();
-
 }
 
-// Parse input program options
+////////////////////////////////////////////////////////////////////////////////
+/// @brief parse program options
+////////////////////////////////////////////////////////////////////////////////
+
 void parseOptions(int argc, char* argv[], ProgramOptions * params)
     throw (std::runtime_error) {
 
@@ -279,3 +316,16 @@ int main(int argc, char* argv[]) {
   return EXIT_SUCCESS;
 
 }
+
+////////////////////////////////////////////////////////////////////////////////
+/// @}
+////////////////////////////////////////////////////////////////////////////////
+
+// -----------------------------------------------------------------------------
+// --SECTION--                                                       END-OF-FILE
+// -----------------------------------------------------------------------------
+
+// Local Variables:
+// mode: outline-minor
+// outline-regexp: "^\\(/// @brief\\|/// {@inheritDoc}\\|/// @addtogroup\\|// --SECTION--\\|/// @\\}\\)"
+// End:
