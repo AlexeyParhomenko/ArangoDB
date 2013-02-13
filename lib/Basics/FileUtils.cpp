@@ -314,6 +314,9 @@ namespace triagens {
         return result;
       }
 
+      bool isWritable (string const& path) {
+        return TRI_IsWritable(path.c_str());
+      }
 
 
       bool isDirectory (string const& path) {
