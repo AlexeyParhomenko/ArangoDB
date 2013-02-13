@@ -72,11 +72,11 @@ void parseOptions(int argc, char* argv[], ProgramOptions * params)
   triagens::basics::ProgramOptions options;
   triagens::basics::ProgramOptionsDescription description("STANDARD options");
   description
-      ("data", &params->isWriteData, "Export database data.")
-      ("create-collection", &params->isWriteMetaData, "Export database meta-data.")
-      ("path", &params->pathToSave, "Path to save data or meta-data.")
-      ("force", &params->isRewriteExistsPath, "Set permission to rewrite data in current path.")
-      ("help", "Display this help message and exit.");
+      ("data", &params->isWriteData, "Dump collection data")
+      ("create-collection", &params->isWriteMetaData, "Dump collection meta-data")
+      ("path", &params->pathToSave, "Output path to save dump files")
+      ("force", &params->isRewriteExistsPath, "Continue even if <path> already exists (warning: may overwrite data in <path>)")
+      ("help", "Display this help message and exit");
 
   triagens::basics::ProgramOptionsDescription clientOptions("CLIENT options");
 
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
 
       if (it == collectionsOnServer.end()) {
         throw std::runtime_error(
-            "Collection " + collection + " not found on server.");
+            "Collection '" + collection + "' not found on server.");
       }
 
       collectionsToDump.push_back(collection);
