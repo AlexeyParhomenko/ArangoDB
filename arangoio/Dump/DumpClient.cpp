@@ -145,6 +145,9 @@ void DumpClient::setPath(std::string path) throw (std::runtime_error) {
   if (!triagens::basics::FileUtils::isDirectory(path)) {
     throw std::runtime_error("Output path '" + path + "' is not a directory.");
   }
+  else if (! triagens::basics::FileUtils::isWritable(path)) {
+    throw std::runtime_error("Output path '" + path + "' is not writeable.");
+  }
 
   path_ = path;
 
