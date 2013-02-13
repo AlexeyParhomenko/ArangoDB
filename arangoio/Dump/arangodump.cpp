@@ -194,7 +194,7 @@ int main (int argc, char* argv[]) {
         endpoint, params.connectionTimeout, params.requestTimeout, 2); // 2 - is ArangoClient::DEFAULT_RETRIES
 
     if (connection == 0) {
-      throw std::runtime_error("Can't give connection because out of memory.");
+      throw std::runtime_error("Out of memory.");
     }
 
     httpClient = new triagens::httpclient::SimpleHttpClient(connection,
@@ -237,6 +237,8 @@ int main (int argc, char* argv[]) {
     }
 
     if (collectionsToDump.size() == 0) {
+      // user has not specified any collections. now dump all collections
+      // that are available on the server
       collectionsToDump = collectionsOnServer;
     }
 
@@ -250,6 +252,15 @@ int main (int argc, char* argv[]) {
       try {
 
         std::cout << "Dumping collection: " << collection << std::endl;
+        
+        if (params.isWriteMetaData) {
+          std::cout << "   metadata...";
+          
+          dumpClient->dumpMetadata(collection);
+          
+          std::cout << " -> successful!" << std::endl;
+
+        }
 
         if (params.isWriteData) {
 
@@ -264,19 +275,6 @@ int main (int argc, char* argv[]) {
 
         }
 
-        if (params.isWriteMetaData) {
-
-          std::cout << "   metadata...";
-
-          url.clear();
-          url.append("/_api/collection/").append(collection).append(
-              "/properties");
-
-          dumpClient->write(url, collection, true);
-
-          std::cout << " -> successful!" << std::endl;
-
-        }
 
       } catch (std::runtime_error & e) {
         std::cerr << e.what() << std::endl;
