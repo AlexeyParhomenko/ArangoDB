@@ -34,13 +34,25 @@
 
 #include "DumpClient.h"
 
-namespace triagens {
-namespace arangoio {
-namespace dump {
+using namespace triagens::arangoio::dump;
 
-/**
- * Constructor
- */
+// -----------------------------------------------------------------------------
+// --SECTION--                                                        DumpClient
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// --SECTION--                                        constructors & destructors
+// -----------------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////////////
+/// @addtogroup ArangoDump
+/// @{
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/// @brief create the dump client
+////////////////////////////////////////////////////////////////////////////////
+
 DumpClient::DumpClient(triagens::httpclient::SimpleHttpClient * httpClient) :
     httpClient_(httpClient), 
     httpResult_(0), 
@@ -48,9 +60,10 @@ DumpClient::DumpClient(triagens::httpclient::SimpleHttpClient * httpClient) :
 
 }
 
-/**
- * Destructor
- */
+////////////////////////////////////////////////////////////////////////////////
+/// @brief destroy the dump client
+////////////////////////////////////////////////////////////////////////////////
+
 DumpClient::~DumpClient() {
 
   if (0 != httpResult_) {
@@ -59,9 +72,23 @@ DumpClient::~DumpClient() {
 
 }
 
-/**
- * Return names collections
- */
+////////////////////////////////////////////////////////////////////////////////
+/// @}
+////////////////////////////////////////////////////////////////////////////////
+
+// -----------------------------------------------------------------------------
+// --SECTION--                                                    public methods
+// -----------------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////////////
+/// @addtogroup ArangoDump
+/// @{
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/// @brief fetch the names of all collections from server and return them
+////////////////////////////////////////////////////////////////////////////////
+
 std::vector<std::string> DumpClient::getCollections() throw (std::runtime_error) {
 
   std::vector<std::string> collections;
@@ -102,41 +129,63 @@ std::vector<std::string> DumpClient::getCollections() throw (std::runtime_error)
 
   }
 
-  // this will free the json struct will a sub-elements
+  // this will free the json struct with all sub-elements
   TRI_FreeJson(TRI_UNKNOWN_MEM_ZONE, json);
 
   return collections;
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// @brief get the output path
+///
+/// note: this will throw an exception if the path is empty
+////////////////////////////////////////////////////////////////////////////////
+
 std::string DumpClient::getPath() throw (std::runtime_error) {
 
   if (path_.empty()) {
-    throw std::runtime_error("Directory to save can't be empty.");
+    throw std::runtime_error("Output path must not be empty.");
   }
 
   return path_;
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// @brief return whether it is allowed to overwrite files in the output path
+////////////////////////////////////////////////////////////////////////////////
+
 bool DumpClient::isRewriteExistsPath() {
   return rewriteExistsPath_;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// @brief set the output path
+///
+/// this will try to create the output path directory if it does not yet exist.
+/// if creating the directory fails, or the directory already exists and we
+/// disallow overwriting data, an exception will be thrown
+////////////////////////////////////////////////////////////////////////////////
+
 void DumpClient::setPath(std::string path) throw (std::runtime_error) {
 
   if (! triagens::basics::FileUtils::exists(path)) {
+    // output path does not yet exist
 
     int err = 0;
 
+    // try to create it
     if (! triagens::basics::FileUtils::createDirectory(path, 0700, &err)) {
       throw std::runtime_error("Can't create directory '" + path + "'");
     }
 
   }
   else {
+    // output path already exists
 
     if (! isRewriteExistsPath()) {
+      // not allowed to overwrite data in output path
       throw std::runtime_error(
           "Output directory '" + path
               + "' already exists. Please choose another directory to save the dump.");
@@ -144,24 +193,34 @@ void DumpClient::setPath(std::string path) throw (std::runtime_error) {
 
   }
 
+  // check if the output path is a directory that we can write to
+
   if (! triagens::basics::FileUtils::isDirectory(path)) {
     throw std::runtime_error("Output path '" + path + "' is not a directory.");
   }
   else if (! triagens::basics::FileUtils::isWritable(path)) {
     throw std::runtime_error("Output path '" + path + "' is not writeable.");
   }
+  
+  // if we get here, the output path should be a valid directory that we can write into
 
   path_ = path;
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// @brief sets the flag whether overwriting existing files in the output
+/// path is allowed
+////////////////////////////////////////////////////////////////////////////////
+
 void DumpClient::setRewriteExistsPath(bool isRewrite) {
   rewriteExistsPath_ = isRewrite;
 }
 
-/**
- * Send request to server and get result
- */
+////////////////////////////////////////////////////////////////////////////////
+/// @brief send request to server and get result
+////////////////////////////////////////////////////////////////////////////////
+
 void DumpClient::sendRequest(const std::string & url) throw (std::runtime_error) {
 
   std::map<std::string, std::string> headerFields;
@@ -205,11 +264,22 @@ void DumpClient::sendRequest(const std::string & url) throw (std::runtime_error)
 
 }
 
-// Save data or metadata to file
+////////////////////////////////////////////////////////////////////////////////
+/// @brief save data or metadata to file
+/// just dispatches work to other write() method
+////////////////////////////////////////////////////////////////////////////////
+
 void DumpClient::write(const std::string & url, const std::string & fileName)
     throw (std::runtime_error) {
   write(url, fileName, false);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+/// @brief save data or metadata to file
+/// this method does the actual work:
+/// - fetch data from URL
+/// - save data into file
+////////////////////////////////////////////////////////////////////////////////
 
 void DumpClient::write(const std::string & url, const std::string & fileName,
     bool isMetaData) throw (std::runtime_error) {
@@ -241,6 +311,15 @@ void DumpClient::write(const std::string & url, const std::string & fileName,
   stream.close();
 }
 
-} /* namespace dump */
-} /* namespace arangoio */
-} /* namespace triagens */
+////////////////////////////////////////////////////////////////////////////////
+/// @}
+////////////////////////////////////////////////////////////////////////////////
+
+// -----------------------------------------------------------------------------
+// --SECTION--                                                       END-OF-FILE
+// -----------------------------------------------------------------------------
+
+// Local Variables:
+// mode: outline-minor
+// outline-regexp: "^\\(/// @brief\\|/// {@inheritDoc}\\|/// @addtogroup\\|// --SECTION--\\|/// @\\}\\)"
+// End:
