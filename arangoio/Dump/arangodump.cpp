@@ -135,7 +135,7 @@ void parseOptions(int argc, char* argv[], ProgramOptions * params)
   // check for help
   std::set<std::string> help = options.needHelp("help");
 
-  if (!help.empty()) {
+  if (! help.empty()) {
     throw std::runtime_error(description.usage(help));
   }
 
@@ -143,7 +143,7 @@ void parseOptions(int argc, char* argv[], ProgramOptions * params)
     throw std::runtime_error(displayUsage(argv));
   }
 
-  if (!params->isWriteData && !params->isWriteMetaData) {
+  if (! params->isWriteData && ! params->isWriteMetaData) {
     throw std::runtime_error("You choose do nothing for dump.");
   }
 }

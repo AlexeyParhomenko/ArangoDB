@@ -42,7 +42,9 @@ namespace dump {
  * Constructor
  */
 DumpClient::DumpClient(triagens::httpclient::SimpleHttpClient * httpClient) :
-    httpClient_(httpClient), httpResult_(0), rewriteExistsPath_(false) {
+    httpClient_(httpClient), 
+    httpResult_(0), 
+    rewriteExistsPath_(false) {
 
 }
 
@@ -123,18 +125,18 @@ bool DumpClient::isRewriteExistsPath() {
 
 void DumpClient::setPath(std::string path) throw (std::runtime_error) {
 
-  if (!triagens::basics::FileUtils::exists(path)) {
+  if (! triagens::basics::FileUtils::exists(path)) {
 
     int err = 0;
 
-    if (!triagens::basics::FileUtils::createDirectory(path, 0700, &err)) {
+    if (! triagens::basics::FileUtils::createDirectory(path, 0700, &err)) {
       throw std::runtime_error("Can't create directory '" + path + "'");
     }
 
   }
   else {
 
-    if (!isRewriteExistsPath()) {
+    if (! isRewriteExistsPath()) {
       throw std::runtime_error(
           "Output directory '" + path
               + "' already exists. Please choose another directory to save the dump.");
@@ -142,7 +144,7 @@ void DumpClient::setPath(std::string path) throw (std::runtime_error) {
 
   }
 
-  if (!triagens::basics::FileUtils::isDirectory(path)) {
+  if (! triagens::basics::FileUtils::isDirectory(path)) {
     throw std::runtime_error("Output path '" + path + "' is not a directory.");
   }
   else if (! triagens::basics::FileUtils::isWritable(path)) {
@@ -225,11 +227,11 @@ void DumpClient::write(const std::string & url, const std::string & fileName,
 
   std::ofstream stream(file.c_str());
 
-  if (!stream.is_open()) {
+  if (! stream.is_open()) {
     throw std::runtime_error("Can't write to file '" + file + "'");
   }
 
-  if (!httpResult_->getBody().str().empty()) {
+  if (! httpResult_->getBody().str().empty()) {
     stream
         << httpResult_->getBody().str().substr(0,
             httpResult_->getBody().str().size() - 26);
