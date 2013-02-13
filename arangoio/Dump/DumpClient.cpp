@@ -138,8 +138,6 @@ std::vector<std::string> DumpClient::getCollections() throw (std::runtime_error)
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief get the output path
-///
-/// note: this will throw an exception if the path is empty
 ////////////////////////////////////////////////////////////////////////////////
 
 std::string DumpClient::getPath() throw (std::runtime_error) {
@@ -218,53 +216,6 @@ void DumpClient::setRewriteExistsPath(bool isRewrite) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// @brief send request to server and get result
-////////////////////////////////////////////////////////////////////////////////
-
-void DumpClient::sendRequest(const std::string & url) throw (std::runtime_error) {
-
-  std::map<std::string, std::string> headerFields;
-
-  if (0 != httpResult_) {
-    delete httpResult_;
-  }
-
-  httpResult_ = httpClient_->request(
-      triagens::rest::HttpRequest::HTTP_REQUEST_GET, url, 0, 0, headerFields);
-
-  if (!httpResult_ || !httpResult_->isComplete()) {
-    throw std::runtime_error("Can't send request to server.");
-  }
-
-  if (200 != httpResult_->getHttpReturnCode()) {
-
-    std::string error = httpResult_->getBody().str();
-
-    // Parse error
-    TRI_json_t * json = TRI_JsonString(TRI_UNKNOWN_MEM_ZONE, error.c_str());
-
-    if (json) {
-
-      // get the error message. This returns a pointer, not a copy
-      TRI_json_t * errorMessage = TRI_LookupArrayJson(json, "errorMessage");
-      if (errorMessage) {
-        if (errorMessage->_type == TRI_JSON_STRING) {
-          error = std::string(errorMessage->_value._string.data,
-              errorMessage->_value._string.length);
-        }
-      }
-
-    }
-
-    // this will free the json struct will a sub-elements
-    TRI_FreeJson(TRI_UNKNOWN_MEM_ZONE, json);
-
-    throw std::runtime_error(error);
-  }
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
 /// @brief save data or metadata to file
 /// just dispatches work to other write() method
 ////////////////////////////////////////////////////////////////////////////////
@@ -309,6 +260,66 @@ void DumpClient::write(const std::string & url, const std::string & fileName,
   }
 
   stream.close();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// @}
+////////////////////////////////////////////////////////////////////////////////
+
+// -----------------------------------------------------------------------------
+// --SECTION--                                                 protected methods
+// -----------------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////////////
+/// @addtogroup ArangoDump
+/// @{
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/// @brief send request to server and get result
+////////////////////////////////////////////////////////////////////////////////
+
+void DumpClient::sendRequest(const std::string & url) throw (std::runtime_error) {
+
+  std::map<std::string, std::string> headerFields;
+
+  if (0 != httpResult_) {
+    delete httpResult_;
+  }
+
+  httpResult_ = httpClient_->request(
+      triagens::rest::HttpRequest::HTTP_REQUEST_GET, url, 0, 0, headerFields);
+
+  if (!httpResult_ || !httpResult_->isComplete()) {
+    throw std::runtime_error("Can't send request to server.");
+  }
+
+  if (200 != httpResult_->getHttpReturnCode()) {
+
+    std::string error = httpResult_->getBody().str();
+
+    // Parse error
+    TRI_json_t * json = TRI_JsonString(TRI_UNKNOWN_MEM_ZONE, error.c_str());
+
+    if (json) {
+
+      // get the error message. This returns a pointer, not a copy
+      TRI_json_t * errorMessage = TRI_LookupArrayJson(json, "errorMessage");
+      if (errorMessage) {
+        if (errorMessage->_type == TRI_JSON_STRING) {
+          error = std::string(errorMessage->_value._string.data,
+              errorMessage->_value._string.length);
+        }
+      }
+
+    }
+
+    // this will free the json struct will a sub-elements
+    TRI_FreeJson(TRI_UNKNOWN_MEM_ZONE, json);
+
+    throw std::runtime_error(error);
+  }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
