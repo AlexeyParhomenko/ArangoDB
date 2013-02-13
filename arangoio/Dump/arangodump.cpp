@@ -47,77 +47,68 @@
 using namespace triagens::arangoio::dump;
 
 typedef struct ProgramOptions {
-	double        connectionTimeout;
-	bool          disableAuthentication;
-	std::string   endpoint;
-	bool          isRewriteExistsPath;
-	bool          isWriteData;
-	bool          isWriteMetaData;
-	std::string   pathToSave;
-	std::string   password;
-	double        requestTimeout;
-	std::string   username;
-}
-ProgramOptions;
+  double connectionTimeout;bool disableAuthentication;
+  std::string endpoint;bool isRewriteExistsPath;bool isWriteData;bool isWriteMetaData;
+  std::string pathToSave;
+  std::string password;
+  double requestTimeout;
+  std::string username;
+} ProgramOptions;
 
 std::string displayUsage(char* argv[]) {
 
-	std::stringstream error;
-	error
-		<< "Usage: "
-		<< argv[0]
-		<< " [OPTIONS] collection"
-		<< std::endl
-		<< "For more options, use "
-		<< argv[0]
-		<< " --help";
+  std::stringstream error;
+  error << "Usage: " << argv[0] << " [OPTIONS] collection" << std::endl
+      << "For more options, use " << argv[0] << " --help";
 
-	return error.str();
+  return error.str();
 
 }
 
 // Parse input program options
-void parseOptions(int argc, char* argv[], ProgramOptions * params) throw (std::runtime_error) {
+void parseOptions(int argc, char* argv[], ProgramOptions * params)
+    throw (std::runtime_error) {
 
-	triagens::basics::ProgramOptions options;
-	triagens::basics::ProgramOptionsDescription description("STANDARD options");
-	description
-		("data", &params->isWriteData, "Export database data.")
-		("create-collection", &params->isWriteMetaData, "Export database meta-data.")
-		("path", &params->pathToSave, "Path to save data or meta-data.")
-		("force", &params->isRewriteExistsPath, "Set permission to rewrite data in current path.")
-		("help", "Display this help message and exit.");
+  triagens::basics::ProgramOptions options;
+  triagens::basics::ProgramOptionsDescription description("STANDARD options");
+  description
+      ("data", &params->isWriteData, "Export database data.")
+      ("create-collection", &params->isWriteMetaData, "Export database meta-data.")
+      ("path", &params->pathToSave, "Path to save data or meta-data.")
+      ("force", &params->isRewriteExistsPath, "Set permission to rewrite data in current path.")
+      ("help", "Display this help message and exit.");
 
-	triagens::basics::ProgramOptionsDescription clientOptions("CLIENT options");
+  triagens::basics::ProgramOptionsDescription clientOptions("CLIENT options");
 
-	clientOptions
-		("server.disable-authentication", &params->disableAuthentication, "disable authentication")
-		("server.endpoint", &params->endpoint, "endpoint to connect to, use 'none' to start without a server")
-		("server.username", &params->username, "username to use when connecting")
-		("server.password", &params->password, "password to use when connecting (leave empty for prompt)")
-		("server.connect-timeout", &params->connectionTimeout, "connect timeout in seconds")
-		("server.request-timeout", &params->requestTimeout, "request timeout in seconds");
+  clientOptions
+      ("server.disable-authentication", &params->disableAuthentication, "disable authentication")
+      ("server.endpoint", &params->endpoint, "endpoint to connect to, use 'none' to start without a server")
+      ("server.username", &params->username, "username to use when connecting")
+      ("server.password", &params->password, "password to use when connecting (leave empty for prompt)")
+      ("server.connect-timeout", &params->connectionTimeout, "connect timeout in seconds")
+      ("server.request-timeout", &params->requestTimeout, "request timeout in seconds");
 
-	description(clientOptions, false);
+  description(clientOptions, false);
 
-	if (!options.parse(description, argc, argv)) {
-		throw std::runtime_error("Cannot parse command line: " + options.lastError());
-	}
+  if (!options.parse(description, argc, argv)) {
+    throw std::runtime_error(
+        "Cannot parse command line: " + options.lastError());
+  }
 
-	// check for help
-	std::set<std::string> help = options.needHelp("help");
+  // check for help
+  std::set<std::string> help = options.needHelp("help");
 
-	if (!help.empty()) {
-		throw std::runtime_error(description.usage(help));
-	}
+  if (!help.empty()) {
+    throw std::runtime_error(description.usage(help));
+  }
 
-	if (1 == argc) {
-		throw std::runtime_error(displayUsage(argv));
-	}
+  if (1 == argc) {
+    throw std::runtime_error(displayUsage(argv));
+  }
 
-	if (!params->isWriteData && !params->isWriteMetaData) {
-		throw std::runtime_error("You choose do nothing for dump.");
-	}
+  if (!params->isWriteData && !params->isWriteMetaData) {
+    throw std::runtime_error("You choose do nothing for dump.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -126,170 +117,165 @@ void parseOptions(int argc, char* argv[], ProgramOptions * params) throw (std::r
 
 int main(int argc, char* argv[]) {
 
-	TRIAGENS_C_INITIALISE(argc, argv);
+  TRIAGENS_C_INITIALISE(argc, argv);
 //	TRIAGENS_REST_INITIALISE(argc, argv);
 
-	TRI_InitialiseLogging(false);
+  TRI_InitialiseLogging(false);
 
-	int err = 0;
+  int err = 0;
 
-	// options by default
-	ProgramOptions params;
-	params.connectionTimeout      = 3.0;
-	params.disableAuthentication  = false;
-	params.endpoint               = triagens::rest::Endpoint::getDefaultEndpoint();
-	params.isRewriteExistsPath    = false;
-	params.isWriteData            = true;
-	params.isWriteMetaData        = true;
-	params.requestTimeout         = 300.0;
-	params.pathToSave
-		.append(triagens::basics::FileUtils::currentDirectory(&err))
-		.append(TRI_DIR_SEPARATOR_STR)
-		.append("dump");
+  // options by default
+  ProgramOptions params;
+  params.connectionTimeout = 3.0;
+  params.disableAuthentication = false;
+  params.endpoint = triagens::rest::Endpoint::getDefaultEndpoint();
+  params.isRewriteExistsPath = false;
+  params.isWriteData = true;
+  params.isWriteMetaData = true;
+  params.requestTimeout = 300.0;
+  params.pathToSave.append(triagens::basics::FileUtils::currentDirectory(&err)).append(
+      TRI_DIR_SEPARATOR_STR).append("dump");
 
-	// Initialize pointers
-	triagens::rest::Endpoint * endpoint                         = NULL;
-	triagens::httpclient::GeneralClientConnection * connection  = NULL;
-	triagens::httpclient::SimpleHttpClient * httpClient         = NULL;
-	DumpClient * dumpClient                                     = NULL;
+  // Initialize pointers
+  triagens::rest::Endpoint * endpoint = NULL;
+  triagens::httpclient::GeneralClientConnection * connection = NULL;
+  triagens::httpclient::SimpleHttpClient * httpClient = NULL;
+  DumpClient * dumpClient = NULL;
 
-	try {
+  try {
 
-		parseOptions(argc, argv, &params);
+    parseOptions(argc, argv, &params);
 
-		std::string collection = argv[argc - 1];
+    std::string collection = argv[argc - 1];
 
-		if (collection.substr(0, 1) == "-") {
-			throw std::runtime_error("Last parameter should be collection name.");
-		}
+    if (collection.substr(0, 1) == "-") {
+      throw std::runtime_error("Last parameter should be collection name.");
+    }
 
-		endpoint   = triagens::rest::Endpoint::clientFactory(params.endpoint);
-		connection = triagens::httpclient::GeneralClientConnection::factory(
-				endpoint, params.connectionTimeout, params.requestTimeout, 2); // 2 - is ArangoClient::DEFAULT_RETRIES
+    endpoint = triagens::rest::Endpoint::clientFactory(params.endpoint);
+    connection = triagens::httpclient::GeneralClientConnection::factory(
+        endpoint, params.connectionTimeout, params.requestTimeout, 2); // 2 - is ArangoClient::DEFAULT_RETRIES
 
-		if (connection == 0) {
-			throw std::runtime_error("Can't give connection because out of memory.");
-		}
+    if (connection == 0) {
+      throw std::runtime_error("Can't give connection because out of memory.");
+    }
 
-		httpClient = new triagens::httpclient::SimpleHttpClient(connection, params.requestTimeout, false);
-		httpClient->setUserNamePassword("/", params.username, params.password);
+    httpClient = new triagens::httpclient::SimpleHttpClient(connection,
+        params.requestTimeout, false);
+    httpClient->setUserNamePassword("/", params.username, params.password);
 
-		dumpClient = new DumpClient(httpClient);
-		dumpClient->setRewriteExistsPath(params.isRewriteExistsPath);
-		dumpClient->setPath(params.pathToSave);
+    dumpClient = new DumpClient(httpClient);
+    dumpClient->setRewriteExistsPath(params.isRewriteExistsPath);
+    dumpClient->setPath(params.pathToSave);
 
-		std::vector<std::string> collectionsOnServer, collectionsToDump;
-		std::vector<std::string>::iterator it;
+    std::vector<std::string> collectionsOnServer, collectionsToDump;
+    std::vector<std::string>::iterator it;
 
-		collectionsOnServer = dumpClient->getCollections();
+    collectionsOnServer = dumpClient->getCollections();
 
-		// Check collections from user
-		for (int i = argc - 1; i > 0 ; i--) {
+    // Check collections from user
+    for (int i = argc - 1; i > 0; i--) {
 
-			collection = argv[i];
+      collection = argv[i];
 
-			if (collection.substr(0, 1) == "-") {
-				break;
-			}
+      if (collection.substr(0, 1) == "-") {
+        break;
+      }
 
-			if ((argc != 2 && i - 1 < 1)
-					|| std::string(argv[i - 1]).substr(0, 1) == "-") {
-				break;
-			}
+      if ((argc != 2 && i - 1 < 1)
+          || std::string(argv[i - 1]).substr(0, 1) == "-") {
+        break;
+      }
 
-			it = std::find(collectionsOnServer.begin(), collectionsOnServer.end(), collection);
+      it = std::find(collectionsOnServer.begin(), collectionsOnServer.end(),
+          collection);
 
-			if (it == collectionsOnServer.end()) {
-				throw std::runtime_error("Collection " + collection + " not found on server.");
-			}
+      if (it == collectionsOnServer.end()) {
+        throw std::runtime_error(
+            "Collection " + collection + " not found on server.");
+      }
 
-			collectionsToDump.push_back(collection);
+      collectionsToDump.push_back(collection);
 
-		}
+    }
 
-		if (collectionsToDump.size() == 0) {
-			collectionsToDump = collectionsOnServer;
-		}
+    if (collectionsToDump.size() == 0) {
+      collectionsToDump = collectionsOnServer;
+    }
 
-		std::string url;
+    std::string url;
 
-		// Start to save data
-		for (it = collectionsToDump.begin(); it != collectionsToDump.end(); it++) {
+    // Start to save data
+    for (it = collectionsToDump.begin(); it != collectionsToDump.end(); it++) {
 
-			collection = (*it);
+      collection = (*it);
 
-			try {
+      try {
 
-				std::cout << "Dumping collection: " << collection << std::endl;
+        std::cout << "Dumping collection: " << collection << std::endl;
 
-				if (params.isWriteData) {
+        if (params.isWriteData) {
 
-					std::cout << "   data...";
+          std::cout << "   data...";
 
-					url.clear();
-					url
-						.append("/_api/index/?collection=")
-						.append(collection);
+          url.clear();
+          url.append("/_api/index/?collection=").append(collection);
 
-					dumpClient->write(url, collection);
+          dumpClient->write(url, collection);
 
-					std::cout << " -> successful!" << std::endl;
+          std::cout << " -> successful!" << std::endl;
 
-				}
+        }
 
-				if (params.isWriteMetaData) {
+        if (params.isWriteMetaData) {
 
-					std::cout << "   metadata...";
+          std::cout << "   metadata...";
 
-					url.clear();
-					url
-						.append("/_api/collection/")
-						.append(collection)
-						.append("/properties");
+          url.clear();
+          url.append("/_api/collection/").append(collection).append(
+              "/properties");
 
-					dumpClient->write(url, collection, true);
+          dumpClient->write(url, collection, true);
 
-					std::cout << " -> successful!" << std::endl;
+          std::cout << " -> successful!" << std::endl;
 
-				}
+        }
 
-			}
-			catch (std::runtime_error & e) {
-				std::cout << e.what() << std::endl;
-			}
-		}
+      } catch (std::runtime_error & e) {
+        std::cout << e.what() << std::endl;
+      }
+    }
 
-	}
-	catch (std::exception & e) {
-		std::cout << std::endl << e.what() << std::endl << std::endl;
-	}
+  } catch (std::exception & e) {
+    std::cout << std::endl << e.what() << std::endl << std::endl;
+  }
 
-	// Delete pointers
+  // Delete pointers
 
-	if (NULL != dumpClient) {
-		delete dumpClient;
-	}
+  if (NULL != dumpClient) {
+    delete dumpClient;
+  }
 
-	if (NULL != httpClient) {
-		delete httpClient;
-	}
+  if (NULL != httpClient) {
+    delete httpClient;
+  }
 
-	if (NULL != connection) {
+  if (NULL != connection) {
 
-		if (connection->isConnected()) {
-			connection->disconnect();
-		}
+    if (connection->isConnected()) {
+      connection->disconnect();
+    }
 
-		delete connection;
-	}
+    delete connection;
+  }
 
-	if (NULL != endpoint) {
-		delete endpoint;
-	}
+  if (NULL != endpoint) {
+    delete endpoint;
+  }
 
 //	TRIAGENS_REST_SHUTDOWN;
-	TRIAGENS_C_SHUTDOWN;
+  TRIAGENS_C_SHUTDOWN;
 
-	return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 
 }

@@ -40,51 +40,50 @@ namespace dump {
 class DumpClient {
 public:
 
-	/**
-	 * Constructor
-	 */
-	DumpClient(triagens::httpclient::SimpleHttpClient * httpClient);
+  /**
+   * Constructor
+   */
+  DumpClient(triagens::httpclient::SimpleHttpClient * httpClient);
 
-	/**
-	 * Destructor
-	 */
-	virtual     ~DumpClient();
+  /**
+   * Destructor
+   */
+  virtual ~DumpClient();
 
-	/**
-	 * Return names collections
-	 */
-	std::vector<std::string>  getCollections() throw (std::runtime_error);
+  /**
+   * Return names collections
+   */
+  std::vector<std::string> getCollections() throw (std::runtime_error);
 
-	/**
-	 * Return path to save
-	 */
-	std::string               getPath() throw (std::runtime_error);
+  /**
+   * Return path to save
+   */
+  std::string getPath() throw (std::runtime_error);
 
-	bool                      isRewriteExistsPath();
+  bool isRewriteExistsPath();
 
-	/**
-	 * Set path to save
-	 */
-	void                      setPath(std::string path) throw (std::runtime_error);
+  /**
+   * Set path to save
+   */
+  void setPath(std::string path) throw (std::runtime_error);
 
-	void                      setRewriteExistsPath(bool isRewrite);
+  void setRewriteExistsPath(bool isRewrite);
 
-	/**
-	 * Write dump
-	 */
-	void        write(const std::string & url, const std::string & fileName)
-						throw (std::runtime_error);
-	void        write(const std::string & url, const std::string & fileName, bool isMetaData)
-						throw (std::runtime_error);
+  /**
+   * Write dump
+   */
+  void write(const std::string & url, const std::string & fileName)
+      throw (std::runtime_error);
+  void write(const std::string & url, const std::string & fileName,
+      bool isMetaData) throw (std::runtime_error);
 
 protected:
 
-	triagens::httpclient::SimpleHttpClient * httpClient_;
-	triagens::httpclient::SimpleHttpResult * httpResult_;
-	bool        rewriteExistsPath_;
-	std::string path_;
+  triagens::httpclient::SimpleHttpClient * httpClient_;
+  triagens::httpclient::SimpleHttpResult * httpResult_;bool rewriteExistsPath_;
+  std::string path_;
 
-	void sendRequest(const std::string & url) throw(std::runtime_error);
+  void sendRequest(const std::string & url) throw (std::runtime_error);
 
 };
 
