@@ -213,7 +213,7 @@ void DumpClient::write(const std::string & url, const std::string & fileName, bo
 	std::string file;
 	file
 		.append(getPath())
-		.append("/")
+		.append(TRI_DIR_SEPARATOR_STR)
 		.append(fileName);
 
 	if (isMetaData) {

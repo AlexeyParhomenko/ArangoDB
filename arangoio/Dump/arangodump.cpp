@@ -144,7 +144,8 @@ int main(int argc, char* argv[]) {
 	params.requestTimeout         = 300.0;
 	params.pathToSave
 		.append(triagens::basics::FileUtils::currentDirectory(&err))
-		.append("/dump");
+		.append(TRI_DIR_SEPARATOR_STR)
+		.append("dump");
 
 	// Initialize pointers
 	triagens::rest::Endpoint * endpoint                         = NULL;
@@ -207,7 +208,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		if (collectionsToDump.size() == 0) {
-			throw std::runtime_error(displayUsage(argv));
+			collectionsToDump = collectionsOnServer;
 		}
 
 		std::string url;
