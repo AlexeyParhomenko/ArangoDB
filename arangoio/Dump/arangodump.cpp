@@ -63,6 +63,7 @@ typedef struct ProgramOptions {
   double connectionTimeout;
   bool disableAuthentication;
   std::string endpoint;
+  bool includeSystemCollections;
   bool isRewriteExistsPath;
   bool isWriteData;
   bool isWriteMetaData;
@@ -109,10 +110,11 @@ static void ParseOptions (int argc, char* argv[], ProgramOptions * params)
   triagens::basics::ProgramOptions options;
   triagens::basics::ProgramOptionsDescription description("STANDARD options");
   description
-      ("data", &params->isWriteData, "Dump collection data")
-      ("create-collection", &params->isWriteMetaData, "Dump collection meta-data")
+      ("dump-data", &params->isWriteData, "Dump collection data")
+      ("dump-metadata", &params->isWriteMetaData, "Dump collection meta-data")
+      ("include-system-collections", &params->includeSystemCollections, "Also include system collections")
       ("path", &params->pathToSave, "Output path to save dump files")
-      ("force", &params->isRewriteExistsPath, "Continue even if <path> already exists (warning: may overwrite data in <path>)")
+      ("overwrite", &params->isRewriteExistsPath, "Continue even if <path> already exists (warning: may overwrite data in <path>)")
       ("help", "Display this help message and exit");
 
   triagens::basics::ProgramOptionsDescription clientOptions("CLIENT options");
@@ -159,13 +161,98 @@ static bool IsAllowedCollectionName (const string& collection) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/// @brief startup and exit functions
+////////////////////////////////////////////////////////////////////////////////
+
+void* arangodumpResourcesAllocated = NULL;
+static void arangodumpEntryFunction ();
+static void arangodumpExitFunction (int, void*);
+
+#ifdef _WIN32
+
+// .............................................................................
+// Call this function to do various initialistions for windows only
+// .............................................................................
+void arangodumpEntryFunction() {
+  int maxOpenFiles = 1024; 
+  int res = 0;
+
+  // ...........................................................................
+  // Uncomment this to call this for extended debug information.
+  // If you familiar with valgrind ... then this is not like that, however
+  // you do get some similar functionality.
+  // ...........................................................................
+  //res = initialiseWindows(TRI_WIN_INITIAL_SET_DEBUG_FLAG, 0); 
+
+  res = initialiseWindows(TRI_WIN_INITIAL_SET_INVALID_HANLE_HANDLER, 0);
+  if (res != 0) {
+    _exit(1);
+  }
+
+  res = initialiseWindows(TRI_WIN_INITIAL_SET_MAX_STD_IO,(const char*)(&maxOpenFiles));
+  if (res != 0) {
+    _exit(1);
+  }
+
+  res = initialiseWindows(TRI_WIN_INITIAL_WSASTARTUP_FUNCTION_CALL, 0);
+  if (res != 0) {
+    _exit(1);
+  }
+
+  TRI_Application_Exit_SetExit(arangoimpExitFunction);
+
+}
+
+static void arangodumpExitFunction(int exitCode, void* data) {
+  int res = 0;
+  // ...........................................................................
+  // TODO: need a terminate function for windows to be called and cleanup
+  // any windows specific stuff.
+  // ...........................................................................
+
+  res = finaliseWindows(TRI_WIN_FINAL_WSASTARTUP_FUNCTION_CALL, 0);
+  
+  if (res != 0) {
+    _exit(1);
+  }
+
+  _exit(exitCode);
+}
+#else
+
+static void arangodumpEntryFunction() {
+}
+
+static void arangodumpExitFunction(int exitCode, void* data) {
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+/// @}
+////////////////////////////////////////////////////////////////////////////////
+
+// -----------------------------------------------------------------------------
+// --SECTION--                                                  public functions
+// -----------------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////////////
+/// @addtogroup ArangoDump
+/// @{
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
 /// @brief main
 ////////////////////////////////////////////////////////////////////////////////
 
 int main (int argc, char* argv[]) {
+  
+  int ret = EXIT_SUCCESS;
+
+  arangodumpEntryFunction();
 
   TRIAGENS_C_INITIALISE(argc, argv);
-//	TRIAGENS_REST_INITIALISE(argc, argv);
+  TRIAGENS_REST_INITIALISE(argc, argv);
 
   TRI_InitialiseLogging(false);
 
@@ -177,6 +264,7 @@ int main (int argc, char* argv[]) {
   params.disableAuthentication = false;
   params.endpoint = triagens::rest::Endpoint::getDefaultEndpoint();
   params.isRewriteExistsPath = false;
+  params.includeSystemCollections = false;
   params.isWriteData = true;
   params.isWriteMetaData = true;
   params.requestTimeout = 300.0;
@@ -218,7 +306,7 @@ int main (int argc, char* argv[]) {
     std::vector<std::string> collectionsOnServer, collectionsToDump;
     std::vector<std::string>::iterator it;
 
-    collectionsOnServer = dumpClient->getCollections();
+    collectionsOnServer = dumpClient->getCollections(params.includeSystemCollections);
 
     // Check collections from user
     for (int i = argc - 1; i > 0; i--) {
@@ -295,6 +383,8 @@ int main (int argc, char* argv[]) {
 
   } catch (std::exception & e) {
     std::cerr << std::endl << e.what() << std::endl << std::endl;
+
+    ret = EXIT_FAILURE;
   }
 
   // Delete pointers
@@ -320,10 +410,11 @@ int main (int argc, char* argv[]) {
     delete endpoint;
   }
 
-//	TRIAGENS_REST_SHUTDOWN;
-  TRIAGENS_C_SHUTDOWN;
+  TRIAGENS_REST_SHUTDOWN;
+  
+  arangodumpExitFunction(ret, NULL);
 
-  return EXIT_SUCCESS;
+  return ret;
 
 }
 

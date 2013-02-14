@@ -87,13 +87,23 @@ DumpClient::~DumpClient () {
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief fetch the names of all collections from server and return them
+///
+/// system collections may be ignored
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<std::string> DumpClient::getCollections () throw (std::runtime_error) {
+std::vector<std::string> DumpClient::getCollections (const bool includeSystemCollections) 
+  throw (std::runtime_error) {
+
+  std::string url("/_api/collection");
+
+  if (! includeSystemCollections) {
+    // we can ignore all system collections
+    url.append("/?excludeSystem=true");
+  }
 
   std::vector<std::string> collections;
 
-  sendRequest("/_api/collection", 
+  sendRequest(url, 
               triagens::rest::HttpRequest::HTTP_REQUEST_GET,
               0);
 

@@ -85,7 +85,8 @@ namespace triagens {
 /// @brief fetch the names of all collections from server and return them
 ////////////////////////////////////////////////////////////////////////////////
           
-          std::vector<std::string> getCollections () throw (std::runtime_error);
+          std::vector<std::string> getCollections (const bool includeSystemCollections) 
+            throw (std::runtime_error);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief get the output path
