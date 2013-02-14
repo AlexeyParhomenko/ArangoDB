@@ -117,29 +117,18 @@ namespace triagens {
           void setRewriteExistsPath (bool isRewrite);
 
 ////////////////////////////////////////////////////////////////////////////////
-/// @brief save data or metadata to file
-/// just dispatches work to other write() method
-////////////////////////////////////////////////////////////////////////////////
-
-          void write (const std::string & url, const std::string & fileName)
-            throw (std::runtime_error);
-
-////////////////////////////////////////////////////////////////////////////////
-/// @brief save data or metadata to file
-/// this method does the actual work:
-/// - fetch data from URL
-/// - save data into file
-////////////////////////////////////////////////////////////////////////////////
-
-          void write (const std::string & url, const std::string & fileName,
-              bool isMetaData) throw (std::runtime_error);
-
-////////////////////////////////////////////////////////////////////////////////
 /// @brief fetch collection metadata from the server and write it to an
 /// output file
 ////////////////////////////////////////////////////////////////////////////////
 
           void dumpMetadata (const std::string & collection) throw (std::runtime_error);
+
+////////////////////////////////////////////////////////////////////////////////
+/// @brief fetch collection data from the server and write it to an
+/// output file
+////////////////////////////////////////////////////////////////////////////////
+
+          void dumpData (const std::string & collection) throw (std::runtime_error);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @}
@@ -169,7 +158,8 @@ namespace triagens {
         
 
           void sendRequest (const std::string & url,
-                            const triagens::rest::HttpRequest::HttpRequestType type) throw (std::runtime_error);
+                            const triagens::rest::HttpRequest::HttpRequestType type,
+                            std::string const* body) throw (std::runtime_error);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @}

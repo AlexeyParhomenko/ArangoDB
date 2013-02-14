@@ -93,7 +93,9 @@ std::vector<std::string> DumpClient::getCollections () throw (std::runtime_error
 
   std::vector<std::string> collections;
 
-  sendRequest("/_api/collection", triagens::rest::HttpRequest::HTTP_REQUEST_GET);
+  sendRequest("/_api/collection", 
+              triagens::rest::HttpRequest::HTTP_REQUEST_GET,
+              0);
 
   TRI_json_t * json = TRI_JsonString(TRI_UNKNOWN_MEM_ZONE,
       httpResult_->getBody().str().c_str());
@@ -127,10 +129,9 @@ std::vector<std::string> DumpClient::getCollections () throw (std::runtime_error
 
     }
 
+    // this will free the json struct with all sub-elements
+    TRI_FreeJson(TRI_UNKNOWN_MEM_ZONE, json);
   }
-
-  // this will free the json struct with all sub-elements
-  TRI_FreeJson(TRI_UNKNOWN_MEM_ZONE, json);
 
   return collections;
 
@@ -216,48 +217,13 @@ void DumpClient::setRewriteExistsPath (bool isRewrite) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/// @brief save data or metadata to file
-/// just dispatches work to other write() method
-////////////////////////////////////////////////////////////////////////////////
-
-void DumpClient::write (const std::string & url, const std::string & collection)
-    throw (std::runtime_error) {
-  write(url, collection, false);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// @brief save data or metadata to file
-/// this method does the actual work:
-/// - fetch data from URL
-/// - save data into file
-////////////////////////////////////////////////////////////////////////////////
-
-void DumpClient::write (const std::string & url, const std::string & collection,
-    bool isMetaData) throw (std::runtime_error) {
-
-  sendRequest(url, triagens::rest::HttpRequest::HTTP_REQUEST_GET);
-
-  std::string file(getFilename(collection, isMetaData));
-
-  std::ofstream stream(file.c_str());
-
-  if (! stream.is_open()) {
-    throw std::runtime_error("Can't write to file '" + file + "'");
-  }
-
-  if (! httpResult_->getBody().str().empty()) {
-    stream
-        << httpResult_->getBody().str().substr(0,
-            httpResult_->getBody().str().size() - 26);
-    stream << "}";
-  }
-
-  stream.close();
-}
-
-////////////////////////////////////////////////////////////////////////////////
 /// @brief fetch collection metadata from the server and write it to an
 /// output file
+///
+/// collection metadata is fetched with two API calls:
+/// - properties: /_api/collection/.../properties
+/// - indexes:    /_api/index?collection=...
+/// both results are written as a JSON-array into the output file
 ////////////////////////////////////////////////////////////////////////////////
 
 void DumpClient::dumpMetadata (const std::string & collection) throw (std::runtime_error) {
@@ -266,8 +232,10 @@ void DumpClient::dumpMetadata (const std::string & collection) throw (std::runti
 
   // fetch collection properties
   url.append("/_api/collection/").append(collection).append("/properties");
-  // sendRequest() will throw if HTTP return code is != 200 
-  sendRequest(url, triagens::rest::HttpRequest::HTTP_REQUEST_GET);
+  // sendRequest() will throw if HTTP return code is != 20x 
+  sendRequest(url, 
+              triagens::rest::HttpRequest::HTTP_REQUEST_GET,
+              0);
     
   body = httpResult_->getBody().str();
   TRI_json_t* properties = TRI_JsonString(TRI_UNKNOWN_MEM_ZONE, body.c_str());
@@ -283,8 +251,10 @@ void DumpClient::dumpMetadata (const std::string & collection) throw (std::runti
   // fetch collection index data
   url.clear();
   url.append("/_api/index/?collection=").append(collection);
-  // sendRequest() will throw if HTTP return code is != 200 
-  sendRequest(url, triagens::rest::HttpRequest::HTTP_REQUEST_GET);
+  // sendRequest() will throw if HTTP return code is != 20x 
+  sendRequest(url, 
+              triagens::rest::HttpRequest::HTTP_REQUEST_GET,
+              0);
   
   body = httpResult_->getBody().str();
   TRI_json_t* indexes = TRI_JsonString(TRI_UNKNOWN_MEM_ZONE, body.c_str());
@@ -318,17 +288,128 @@ void DumpClient::dumpMetadata (const std::string & collection) throw (std::runti
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/// @brief fetch collection data from the server and write it to an output file
+///
+/// the actual data may be fetched with multiple HTTP requests:
+/// - PUT /_api/simple/all to fetch initial data
+/// - PUT /_api/cursor to fetch remaining data until there is no more
+/// - DELETE /_api/cursor to clean up
+////////////////////////////////////////////////////////////////////////////////
+
+void DumpClient::dumpData (const std::string & collection) throw (std::runtime_error) {
+  triagens::basics::StringBuffer sb(TRI_UNKNOWN_MEM_ZONE);
+
+  // initialise output file
+  std::ofstream stream(getFilename(collection, false).c_str());
+  if (! stream.is_open()) {
+    throw std::runtime_error("Can't save data for collection '" + collection + "'");
+  }
+
+  // fetch collection data
+
+  // all collection names have been validated before
+  // so we don't need to care about escaping them
+  const std::string requestBody = "{\"collection\":\"" + collection + "\",\"batchSize\":2000}";
+
+  // sendRequest() will throw if HTTP return code is != 20x 
+  sendRequest("/_api/simple/all",
+              triagens::rest::HttpRequest::HTTP_REQUEST_PUT,
+              &requestBody);
+
+  std::string responseBody;
+  std::string cursorUrl;
+
+  // after the initial request to /_api/simple/all, there might be
+  // subsequent requests to /_api/cursor to fetch more data from the server
+  while (true) {
+    responseBody = httpResult_->getBody().str();
+
+    TRI_json_t* json = TRI_JsonString(TRI_UNKNOWN_MEM_ZONE, responseBody.c_str());
+
+    if (0 == json) {
+      throw std::runtime_error("Out of memory");
+    }
+
+    // look for the "result" attribute
+    // this attribute contains the actual documents
+    TRI_json_t * result = TRI_LookupArrayJson(json, "result");
+    if (0 == result || TRI_JSON_LIST != result->_type) {
+      TRI_FreeJson(TRI_UNKNOWN_MEM_ZONE, json);
+      throw std::runtime_error("Got malformed JSON from server.");
+    }
+
+    // look for the "hasMore" attribute
+    // the value indicates whether we can fetch more data from the server
+    TRI_json_t* hasMore = TRI_LookupArrayJson(json, "hasMore");
+    if (0 == hasMore || TRI_JSON_BOOLEAN != hasMore->_type) {
+      TRI_FreeJson(TRI_UNKNOWN_MEM_ZONE, json);
+      throw std::runtime_error("Got malformed JSON from server.");
+    }
+
+    const bool hasMoreData = hasMore->_value._boolean;
+    
+    if (hasMoreData) {
+      // the server indicated that there are more documents, it should also
+      // have returned a cursor id in the "id" attribute
+      TRI_json_t* id = TRI_LookupArrayJson(json, "id");
+      if (0 == id || TRI_JSON_STRING != id->_type) {
+        TRI_FreeJson(TRI_UNKNOWN_MEM_ZONE, json);
+        throw std::runtime_error("Got malformed JSON from server.");
+      }
+
+      if (cursorUrl == "") {
+        cursorUrl.append("/_api/cursor/");
+        cursorUrl.append(id->_value._string.data);
+      }
+    }
+
+    // dump all documents into the outstream
+    for (size_t i = 0; i < result->_value._objects._length; ++i) {
+      TRI_json_t* current = (TRI_json_t*) TRI_AtVector(&result->_value._objects, i);
+
+      sb.clear();
+      if (TRI_ERROR_NO_ERROR != TRI_StringifyJson(sb.stringBuffer(), current)) {
+        TRI_FreeJson(TRI_UNKNOWN_MEM_ZONE, json);
+        throw std::runtime_error("Out of memory.");
+      }
+
+      stream << sb.c_str() << std::endl;
+    }
+    
+    TRI_FreeJson(TRI_UNKNOWN_MEM_ZONE, json);
+    
+    if (! hasMoreData) {
+      // "hasMore" is false. that means we have reached the end of the data
+      break;
+    }
+    
+    // fetch the next documents
+    // sendRequest() will throw if HTTP return code is != 20x 
+    sendRequest(cursorUrl, 
+                triagens::rest::HttpRequest::HTTP_REQUEST_PUT,
+                0);
+  }
+
+
+  if (cursorUrl != "") {
+    // clean up server-side cursor
+    sendRequest(cursorUrl, 
+                triagens::rest::HttpRequest::HTTP_REQUEST_DELETE,
+                0);
+  }
+    
+  
+  // close output file
+  stream.close();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 /// @}
 ////////////////////////////////////////////////////////////////////////////////
 
 // -----------------------------------------------------------------------------
 // --SECTION--                                                 protected methods
 // -----------------------------------------------------------------------------
-
-////////////////////////////////////////////////////////////////////////////////
-/// @addtogroup ArangoDump
-/// @{
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief return an absolute filename for a collection
@@ -353,7 +434,8 @@ std::string DumpClient::getFilename (const std::string& collection,
 ////////////////////////////////////////////////////////////////////////////////
 
 void DumpClient::sendRequest (const std::string & url, 
-                              const triagens::rest::HttpRequest::HttpRequestType type) throw (std::runtime_error) {
+                              const triagens::rest::HttpRequest::HttpRequestType type,
+                              std::string const* body) throw (std::runtime_error) {
 
   std::map<std::string, std::string> headerFields;
 
@@ -361,14 +443,21 @@ void DumpClient::sendRequest (const std::string & url,
     delete httpResult_;
   }
 
-  httpResult_ = httpClient_->request(
-      triagens::rest::HttpRequest::HTTP_REQUEST_GET, url, 0, 0, headerFields);
+
+  if (0 != body) {
+    // we have a body to send (e.g. HTTP POST, HTTP PUT)
+    httpResult_ = httpClient_->request(type, url, body->c_str(), body->size(), headerFields);
+  }
+  else {
+    // we do not have a body to send (e.g. HTTP GET)
+    httpResult_ = httpClient_->request(type, url, 0, 0, headerFields);
+  }
 
   if (! httpResult_ || ! httpResult_->isComplete()) {
     throw std::runtime_error("Can't send request to server.");
   }
 
-  if (200 != httpResult_->getHttpReturnCode()) {
+  if (! httpResult_->is20xResponse()) {
 
     std::string error = httpResult_->getBody().str();
 
@@ -393,7 +482,6 @@ void DumpClient::sendRequest (const std::string & url,
 
     throw std::runtime_error(error);
   }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////

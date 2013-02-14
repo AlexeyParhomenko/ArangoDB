@@ -90,7 +90,7 @@ ProgramOptions;
 /// @brief assemble the program usage information
 ////////////////////////////////////////////////////////////////////////////////
 
-static std::string displayUsage (char* argv[]) {
+static std::string DisplayUsage (char* argv[]) {
 
   std::stringstream error;
   error << "Usage: " << argv[0] << " [OPTIONS] collection" << std::endl
@@ -103,7 +103,7 @@ static std::string displayUsage (char* argv[]) {
 /// @brief parse program options
 ////////////////////////////////////////////////////////////////////////////////
 
-static void parseOptions (int argc, char* argv[], ProgramOptions * params)
+static void ParseOptions (int argc, char* argv[], ProgramOptions * params)
     throw (std::runtime_error) {
 
   triagens::basics::ProgramOptions options;
@@ -140,12 +140,22 @@ static void parseOptions (int argc, char* argv[], ProgramOptions * params)
   }
 
   if (1 == argc) {
-    throw std::runtime_error(displayUsage(argv));
+    throw std::runtime_error(DisplayUsage(argv));
   }
 
   if (! params->isWriteData && ! params->isWriteMetaData) {
     throw std::runtime_error("You choose do nothing for dump.");
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// @brief return whether a collection name is valid
+////////////////////////////////////////////////////////////////////////////////
+
+static bool IsAllowedCollectionName (const string& collection) {
+  static const std::string allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+
+  return (collection.find_first_not_of(allowedChars) == std::string::npos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -181,7 +191,7 @@ int main (int argc, char* argv[]) {
 
   try {
 
-    parseOptions(argc, argv, &params);
+    ParseOptions(argc, argv, &params);
 
     std::string collection = argv[argc - 1];
 
@@ -242,18 +252,23 @@ int main (int argc, char* argv[]) {
       collectionsToDump = collectionsOnServer;
     }
 
-    std::string url;
-
     // Start to save data
     for (it = collectionsToDump.begin(); it != collectionsToDump.end(); it++) {
 
       collection = (*it);
 
+      // validate the collection name
+      if (! IsAllowedCollectionName(collection)) {
+        // if we encounter a name that is not valid, we simply skip it
+        continue;
+      }
+
       try {
 
-        std::cout << "Dumping collection: " << collection << std::endl;
+        std::cout << "Dumping collection '" << collection << "'" << std::endl;
         
         if (params.isWriteMetaData) {
+
           std::cout << "   metadata...";
           
           dumpClient->dumpMetadata(collection);
@@ -265,11 +280,8 @@ int main (int argc, char* argv[]) {
         if (params.isWriteData) {
 
           std::cout << "   data...";
-
-          url.clear();
-          url.append("/_api/index/?collection=").append(collection);
-
-          dumpClient->write(url, collection);
+          
+          dumpClient->dumpData(collection);
 
           std::cout << " -> successful!" << std::endl;
 
