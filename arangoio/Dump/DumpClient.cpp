@@ -303,7 +303,7 @@ void DumpClient::dumpMetadata (const std::string & collection) throw (std::runti
 /// the actual data may be fetched with multiple HTTP requests:
 /// - PUT /_api/simple/all to fetch initial data
 /// - PUT /_api/cursor to fetch remaining data until there is no more
-/// - DELETE /_api/cursor to clean up
+/// - DELETE /_api/cursor to clean up (TODO: seems unnecessary)
 ////////////////////////////////////////////////////////////////////////////////
 
 void DumpClient::dumpData (const std::string & collection) throw (std::runtime_error) {
@@ -401,12 +401,17 @@ void DumpClient::dumpData (const std::string & collection) throw (std::runtime_e
   }
 
 
+  /* 
+     it seems unnecessary to remove the cursor at the end
+     it is probably removed automatically if we fetched the final elements
+     TODO: verify this
   if (cursorUrl != "") {
     // clean up server-side cursor
     sendRequest(cursorUrl, 
                 triagens::rest::HttpRequest::HTTP_REQUEST_DELETE,
                 0);
   }
+  */
     
   
   // close output file
