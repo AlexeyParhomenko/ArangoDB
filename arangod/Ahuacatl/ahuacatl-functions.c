@@ -625,6 +625,8 @@ TRI_associative_pointer_t* TRI_InitialiseFunctionsAql (void) {
   REGISTER_FUNCTION("MERGE_RECURSIVE", "MERGE_RECURSIVE", true, false, "a,a|+", NULL);
   REGISTER_FUNCTION("DOCUMENT", "DOCUMENT", false, false, "h,sl", NULL);
   REGISTER_FUNCTION("MATCHES", "MATCHES", true, false, ".,l|b", NULL);
+  REGISTER_FUNCTION("UNSET", "UNSET", true, false, "a,sl|+", NULL);
+  REGISTER_FUNCTION("KEEP", "KEEP", true, false, "a,sl|+", NULL);
 
   // geo functions
   REGISTER_FUNCTION("NEAR", "GEO_NEAR", false, false, "h,n,n,n|s", NULL);
@@ -637,6 +639,7 @@ TRI_associative_pointer_t* TRI_InitialiseFunctionsAql (void) {
   REGISTER_FUNCTION("PATHS", "GRAPH_PATHS", false, false, "c,h|s,b", &OptimisePaths);
   REGISTER_FUNCTION("TRAVERSAL", "GRAPH_TRAVERSAL", false, false, "h,h,s,s,a", NULL);
   REGISTER_FUNCTION("TRAVERSAL_TREE", "GRAPH_TRAVERSAL_TREE", false, false, "h,h,s,s,s,a", NULL);
+  REGISTER_FUNCTION("EDGES", "GRAPH_EDGES", false, false, "h,s,s", NULL);
   
   // misc functions
   REGISTER_FUNCTION("FAIL", "FAIL", false, false, "|s", NULL); // FAIL is non-deterministic, otherwise query optimisation will fail!

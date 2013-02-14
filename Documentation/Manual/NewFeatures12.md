@@ -127,12 +127,9 @@ which makes setting up and querying edges much easier in ArangoDB 1.2:
 Additional graph functionality {#NewFeatures12GraphFunctionality}
 -----------------------------------------------------------------
 
-- Javascript graph API
+- @BOOK_REF{JSModuleGraph}
 
-- Javascript traversal functionality
-
-- REST graphi API /_api/graph
-
+- @BOOK_REF{HttpGraph}
 
 AQL Improvements {#NewFeatures12AqlImprovements}
 ------------------------------------------------
@@ -151,9 +148,15 @@ in ArangoDB 1.2:
   the traversal to specific types of edges.
   
 * `TRAVERSAL_TREE()`: the same as `TRAVERSAL()`, but will return the result in 
-  a hierarchical format.
+  a hierarchical format
+
+* `EDGES()`: access edges connected to a vertex from via an AQL function
 
 * `ATTRIBUTES()`: returns the names of all attributes of a document as a list
+
+* `KEEP()`: keeps only the specified attributes of a document, and removes all others
+
+* `UNSET()`: removes only the specified attributes from a document, and preserves all others
 
 * `MATCHES()`: to check if a document matches one of multiple example documents
 
@@ -372,7 +375,7 @@ only be noticeable if the collection is big.
 
 ### Allow importing of JSON lists
 
-`arangoimp` and the REST bulk import API (@ref HTTPImport) of ArangoDB allow mass importing
+`arangoimp` and the REST bulk import API (@ref HttpImport) of ArangoDB allow mass importing
 documents from a file in these formats:
 
 - individual JSON documents: each line in the input file is a standalone JSON document:
@@ -404,7 +407,7 @@ option to an appropriate value. To set the buffer to 16 MB:
 
 ### Logging of import failures
 
-When documents are imported via the REST bulk import API (@ref HTTPImport), ArangoDB 
+When documents are imported via the REST bulk import API (@ref HttpImport), ArangoDB 
 returns an aggregate response containing the number of documents inserted plus the
 number of errors that occurred during the import.
 

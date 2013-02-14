@@ -43,6 +43,16 @@ ARANGO_PIDFILE=/var/run/arangodb/arangod.pid
 # First reset status of this service
 rc_reset
 
+start () {
+    ARANGO_PIDDIR=`dirname $ARANGO_PIDFILE`
+    test -d $ARANGO_PIDDIR || (mkdir $ARANGO_PIDDIR && chown arangodb $ARANGO_PIDDIR)
+ 
+    startproc $ARANGO_BIN -c $ARANGO_SYSCONFIG --pid-file "$ARANGO_PIDFILE" --supervisor --uid arangodb $@ 
+
+    # Remember status and be verbose
+    rc_status -v
+}
+
 case "$1" in
 
   ################################################################################
@@ -51,15 +61,9 @@ case "$1" in
   ################################################################################
 
   start)
-    echo -n "Starting ARANGODB daemon"
+    echo -n "Starting ArangoDB daemon"
 
-    ARANGO_PIDDIR=`dirname $ARANGO_PIDFILE`
-    test -d $ARANGO_PIDDIR || (mkdir $ARANGO_PIDDIR && chown arangodb $ARANGO_PIDDIR)
- 
-    $ARANGO_BIN -c $ARANGO_SYSCONFIG --pid-file "$ARANGO_PIDFILE" --supervisor --uid arangodb
-
-    # Remember status and be verbose
-    rc_status -v
+    start
     ;;
 
   ################################################################################
@@ -68,7 +72,7 @@ case "$1" in
   ################################################################################
 
   stop)
-    echo -n "Shutting down ARANGODB daemon"
+    echo -n "Shutting down ArangoDB daemon"
 
     killproc -t $ARANGO_TIMEOUT -p $ARANGO_PIDFILE -TERM $ARANGO_BIN
 
@@ -108,7 +112,7 @@ case "$1" in
   ################################################################################
 
   force-reload|reload)
-    echo -n "Reload service ARANGODB"
+    echo -n "Reload service ArangoDB"
 
     echo "reload is currently not supported"
 
@@ -128,7 +132,7 @@ case "$1" in
   ################################################################################
 
   status)
-    echo -n "Checking for service ARANGODB"
+    echo -n "Checking for service ArangoDB"
 
     checkproc -p $ARANGO_PIDFILE $ARANGO_BIN
 
@@ -137,11 +141,21 @@ case "$1" in
     ;;
 
   ################################################################################
+  ## upgrade database
+  ################################################################################
+
+  upgrade)
+    echo -n "Upgrading ArangoDB database files"
+
+    start --upgrade
+    ;;
+
+  ################################################################################
   ## print usage message
   ################################################################################
 
   *)
-    echo "Usage: $0 {start|stop|status|try-restart|restart}"
+    echo "Usage: $0 {start|stop|restart|force-reload|status|upgrade}"
     exit 1
 
     ;;

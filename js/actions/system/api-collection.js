@@ -59,6 +59,7 @@ function collectionRepresentation (collection, showProperties, showCount, showFi
     result.journalSize   = properties.journalSize;      
     result.createOptions = properties.createOptions;
     result.isVolatile    = properties.isVolatile;
+    result.isSystem      = properties.isSystem;
   }
 
   if (showCount) {
@@ -109,7 +110,7 @@ function collectionRepresentation (collection, showProperties, showCount, showFi
 ///   update of an document.
 ///
 /// - @LIT{journalSize} (optional, default is a @ref
-///   CommandLineArango "configuration parameter"): The maximal size of
+///   CommandLineArangod "configuration parameter"): The maximal size of
 ///   a journal or datafile.  Note that this also limits the maximal
 ///   size of a single object. Must be at least 1MB.
 ///
@@ -204,8 +205,9 @@ function post_api_collection (req, res) {
 
     result.id = collection._id;
     result.name = collection.name();
-    result.waitForSync = parameter.waitForSync;
-    result.isVolatile = parameter.isVolatile;
+    result.waitForSync = parameter.waitForSync || false;
+    result.isVolatile = parameter.isVolatile || false;
+    result.isSystem = parameter.isSystem || false;
     result.status = collection.status();
     result.type = collection.type();
     result.createOptions = collection.createOptions;
@@ -231,6 +233,9 @@ function post_api_collection (req, res) {
 /// available in the @LIT{names} as hash map with the collection names
 /// as keys.
 ///
+/// By providing the optional URL parameter @LIT{excludeSystem} with a value of
+/// @LIT{true}, all system collections will be excluded from the response.
+///
 /// @EXAMPLES
 ///
 /// Return information about all collections:
@@ -242,11 +247,24 @@ function get_api_collections (req, res) {
   var i;
   var list = [];
   var names = {};
+  var excludeSystem;
   var collections = arangodb.db._collections();
+
+  excludeSystem = false;
+  if (req.parameters.hasOwnProperty('excludeSystem')) {
+    var value = req.parameters.excludeSystem;
+    if (value === 'true' || value === 'yes' || value === 'on' || value === 'y' || value === '1') {
+      excludeSystem = true;
+    }
+  }
 
   for (i = 0;  i < collections.length;  ++i) {
     var collection = collections[i];
     var rep = collectionRepresentation(collection);
+
+    if (excludeSystem && rep.name.substr(0, 1) === '_') {
+      continue;
+    }
 
     list.push(rep);
     names[rep.name] = rep;
@@ -396,7 +414,7 @@ function get_api_collection (req, res) {
   // .............................................................................
 
   if (req.parameters.useId || parseInt(req.suffix[0],10)) {
-    name = parseInt(req.suffix[0],10);
+    name = parseInt(req.suffix[0], 10);
   }
   else {
     name = decodeURIComponent(req.suffix[0]);

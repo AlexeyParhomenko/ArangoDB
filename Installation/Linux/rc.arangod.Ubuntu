@@ -16,22 +16,26 @@
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 DAEMON=/usr/sbin/arangod
 DESC="ArangoDB"
-NAME="arangodb"
+NAME="arangod"
 PIDDIR=/var/run/arangodb
 PIDFILE=${PIDDIR}/arangod.pid
 CONF=/etc/arangodb/arangod.conf
 
 test -x $DAEMON || exit 0
 
+start () {
+    test -d $PIDDIR || mkdir $PIDDIR
+    chown arangodb $PIDDIR
+
+    $DAEMON -c $CONF --pid-file "$PIDFILE" --supervisor --uid arangodb $@
+    log_end_msg $?
+}
+
 case "$1" in
   start)
     log_daemon_msg "Starting $DESC" "$NAME"
 
-    test -d $PIDDIR || mkdir $PIDDIR
-    chown arangodb $PIDDIR
-
-    $DAEMON -c $CONF --pid-file "$PIDFILE" --supervisor --uid arangodb
-    log_end_msg $?
+    start
     ;;
 
   stop)
@@ -57,8 +61,14 @@ case "$1" in
     status_of_proc $DAEMON $NAME && exit 0 || exit $?
     ;;
 
+  upgrade)
+    log_daemon_msg "Upgrading $DESC" "$NAME"
+
+    start --upgrade
+    ;;
+
   *)
-    log_success_msg "Usage: /etc/init.d/arango {start|stop|restart|force-reload|status}"
+    log_success_msg "Usage: /etc/init.d/arango {start|stop|restart|force-reload|status|upgrade}"
     exit 1
     ;;
 esac
